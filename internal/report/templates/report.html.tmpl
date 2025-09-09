@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Security Report — {{ .Target }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    :root { --bg:#0b0f14; --card:#121922; --muted:#8aa0b5; --text:#e8f0f7; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --info:#38bdf8; --border:#1f2a37; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+    .container{max-width:1000px;margin:40px auto;padding:0 20px}
+    .header{display:flex;justify-content:space-between;align-items:center}
+    .badge{display:inline-block;padding:.2rem .5rem;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+    h1{font-size:1.6rem;margin:.2rem 0}
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+    .kpi{font-weight:700;font-size:1.4rem}
+    .kpi.ok{color:var(--ok)} .kpi.warn{color:var(--warn)} .kpi.bad{color:var(--bad)} .kpi.info{color:var(--info)}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:.9rem;margin-top:6px}
+    table{width:100%;border-collapse:collapse;margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+    th{background:#0f1720;text-align:left;color:#c8d4df}
+    tr:last-child td{border-bottom:none}
+    .sev{font-weight:700}
+    .sev.CRITICAL{color:#ff6b6b}
+    .sev.HIGH{color:#ef4444}
+    .sev.MEDIUM{color:#f59e0b}
+    .sev.LOW{color:#22c55e}
+    .sev.INFO{color:#38bdf8}
+    .footer{margin:24px 0;color:var(--muted);font-size:.9rem}
+    .muted{color:var(--muted)}
+    .score{font-size:2rem;font-weight:800}
+    @media (max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <div class="badge">yorosec-agent</div>
+        <h1>Security Report — {{ .Target }}</h1>
+        <div class="muted">Scan time: {{ .ScanTime }} · Generated: {{ .GeneratedAt }}</div>
+      </div>
+      <div class="card" style="text-align:right">
+        <div class="muted">Risk Score</div>
+        <div class="score">{{ .Score }}</div>
+        <div class="muted">Grade {{ .Grade }}</div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><div class="muted">Total Findings</div><div class="kpi">{{ .TotalFindings }}</div></div>
+      <div class="card"><div class="muted">Critical</div><div class="kpi bad">{{ index .Counts "CRITICAL" }}</div></div>
+      <div class="card"><div class="muted">High</div><div class="kpi bad">{{ index .Counts "HIGH" }}</div></div>
+      <div class="card"><div class="muted">Medium</div><div class="kpi warn">{{ index .Counts "MEDIUM" }}</div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="muted">Low</div><div class="kpi ok">{{ index .Counts "LOW" }}</div></div>
+      <div class="card"><div class="muted">Info</div><div class="kpi info">{{ index .Counts "INFO" }}</div></div>
+      <div class="card"><div class="muted">Generator</div><div class="kpi">{{ .Generator }}</div></div>
+      <div class="card"><div class="muted">Severity Legend</div>
+        <div class="legend">{{ range .LegendSeverity }}<span class="sev {{ . }}">{{ . }}</span>{{ end }}</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:24px">Findings</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px">Severity</th>
+          <th>ID</th>
+          <th>Description</th>
+          <th>Evidence</th>
+          <th style="width:90px">Scanner</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ if eq .TotalFindings 0 }}
+          <tr><td colspan="5" class="muted">No findings. Great job!</td></tr>
+        {{ else }}
+          {{ range .Findings }}
+            <tr>
+              <td class="sev {{ .Severity }}">{{ .Severity }}</td>
+              <td><div>{{ .ID }}</div><div class="muted">{{ .Template }}</div></td>
+              <td>{{ .Description }}</td>
+              <td class="muted">{{ .Evidence }}</td>
+              <td>{{ .Scanner }}</td>
+            </tr>
+          {{ end }}
+        {{ end }}
+      </tbody>
+    </table>
+
+    <div class="footer">
+    This report is generated for authorized testing only. © {{ .Year }} Yorozuya Solutions Limited
+    </div>
+  </div>
+</body>
+</html>

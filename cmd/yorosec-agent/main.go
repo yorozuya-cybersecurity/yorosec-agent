@@ -1,8 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/yorozuya-cybersecurity/yorosec-agent/pkg/cli"
 
 func main() {
-	fmt.Println("yorosec-agent v0.0.1")
-	fmt.Println("Usage: yoro [scan|report|version]")
+	cli.Execute()
 }
