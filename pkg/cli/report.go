@@ -16,11 +16,12 @@ func newReportCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "report",
 		Short:   "Generate HTML/PDF report from a scan result directory",
-		Example: `  yoro report --from ./reports/example.com_20250907_143012 --format html,pdf`,
+		Example: "yoro report --from ./reports/example.com_20250911_131722 --format html,pdf",
 		RunE:    runReport,
 	}
+
 	cmd.Flags().String("from", "", "Scan result directory (must contain results.json)")
-	cmd.Flags().String("format", "html,pdf", "Output formats: html,pdf,json (json not implemented here)")
+	cmd.Flags().String("format", "html,pdf", "Output formats: html,pdf,json (json just points to results.json)")
 
 	_ = viper.BindPFlag("report.from", cmd.Flags().Lookup("from"))
 	_ = viper.BindPFlag("report.format", cmd.Flags().Lookup("format"))
@@ -32,40 +33,34 @@ func runReport(cmd *cobra.Command, _ []string) error {
 	if from == "" {
 		return errors.New("please provide --from pointing to the scan directory (with results.json)")
 	}
+
 	formats := strings.Split(viper.GetString("report.format"), ",")
 	for i := range formats {
 		formats[i] = strings.TrimSpace(strings.ToLower(formats[i]))
 	}
 
-	// Load scan results
+	// Load scan results and render HTML
 	res, err := reportpkg.LoadScanResult(from)
 	if err != nil {
 		return err
 	}
-
-	// Generate HTML (always)
 	htmlPath, err := reportpkg.GenerateHTML(res, from)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("📝 HTML report: %s\n", htmlPath)
 
-	// Optional PDF
+	// Optional PDF (Chromedp-based)
 	if contains(formats, "pdf") {
 		pdfPath, err := reportpkg.GeneratePDF(htmlPath)
 		if err != nil {
-			if err == reportpkg.ErrWKHTMLNotFound {
-				fmt.Println("ℹ️  wkhtmltopdf is not installed. To enable PDF export on macOS:")
-				fmt.Println("    brew install wkhtmltopdf")
-			} else {
-				return err
-			}
+			fmt.Printf("⚠️  PDF generation failed: %v\n", err)
 		} else {
 			fmt.Printf("📄 PDF report:  %s\n", pdfPath)
 		}
 	}
 
-	// Optional JSON passthrough (for completeness)
+	// Optional JSON passthrough
 	if contains(formats, "json") {
 		fmt.Printf("📦 JSON already exists at: %s\n", filepath.Join(from, "results.json"))
 	}
